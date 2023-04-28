@@ -11,4 +11,6 @@ update-database: Crear modelos en la BD
 
 estas inicaciones pueden estar suceptibles a cambios!
 
+los archivos se encuentran en la rama master!
+
 cualquier novedad contactarse a dav.castillo0810@gmail.com o eñl whatsapp +57 3045785704!
