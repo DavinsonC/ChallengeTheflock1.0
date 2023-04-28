@@ -1,0 +1,468 @@
+﻿@page "/hotel"
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Components.Forms
+@using ChallengeTheFlock1._0.Controllers
+@using ChallengeTheFlock1._0.Data
+@using System.Linq
+@using ChallengeTheFlock1._0.Models
+@using CurrieTechnologies.Razor.SweetAlert2
+@inherits OwningComponentBase<HotelLogicServices>
+@inject HotelLogicServices servicios
+@inject SweetAlertService Swal;
+@inject NavigationManager _navigationManager
+<h3>Listado de Hoteles</h3>
+<button class="btn-primary" @onclick="ShowModal"> Agregar Hotel </button>
+@if (popup)
+{
+    <div class="modal" tabindex="-1" style="display:block;">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Datos del Hotel</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @onclick="CloseModal"></button>
+            </div>
+            <EditForm EditContext="@editHotelContext">
+                <DataAnnotationsValidator />
+                <div class="modal-body">
+                    <table border="0">
+                        <tr>
+                            <td>Nombre *</td>
+                            <td>
+                                <InputText @bind-Value="@objetoHotel.Name" placeholder="Ingresar Nombre..." />
+                                <ValidationMessage For="() => objetoHotel.Name" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Estrellas *</td>
+                            <td>
+                                <InputNumber @bind-Value="@objetoHotel.Stars" placeholder="Ingresar Estrellas..." />
+                                <ValidationMessage For="() => objetoHotel.Stars" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Dirección *</td>
+                            <td>
+                                <InputText @bind-Value="@objetoHotel.Address" placeholder="Ingresar Dirección..." />
+                                <ValidationMessage For="() => objetoHotel.Address" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Teléfono *</td>
+                            <td>
+                                <InputText @bind-Value="@objetoHotel.PhoneNumber" placeholder="Ingresar Teléfono..." />
+                                <ValidationMessage For="() => objetoHotel.PhoneNumber" />
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </EditForm>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="CloseModal">Cerrar</button>
+                <button type="button" class="btn btn-primary" @onclick="() =>editHotelContext.Validate()">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+}
+<table class="table table-striped table-hover">
+    <thead>
+        <tr>
+            <th>Id</th>
+            <th>Nombre</th>
+            <th>Estrellas</th>
+            <th>Dirección</th>
+            <th>Telefono</th>
+            <th>Opciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var data in DisplayData)
+        {
+            <tr>
+                <td>@data.IdHotel</td>
+                <td>@data.Name</td>
+                <td>@data.Stars</td>
+                <td>@data.Address</td>
+                <td>@data.PhoneNumber</td>
+                <td>
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn-info" @onclick="(()=>ShowModalEdithHotel(data))">Editar</button>
+                        <button type="button" class="btn-danger" @onclick="(()=>DeleteHotel(data))">Eliminar</button>
+                    </div>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+<h3>Listado de Habitaciones por Hotel</h3>
+<button class="btn-primary" @onclick="ShowModalRoom"> Agregar Habitación </button>
+@if (popupRoom)
+{
+<div class="modal" tabindex="-1" style="display:block;">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Datos de la Habitación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @onclick="CloseModalRoom"></button>
+            </div>
+            <EditForm EditContext="@editRoomContext">
+                <DataAnnotationsValidator />
+                <div class="modal-body">
+                    <table border="0">
+                        <tr>
+                            <td>Nombre * :</td>
+                            <td>
+                                <InputText type="text" @bind-Value="objetoRoom.Nombre" placeholder="Ingresar Nombre..." required />
+                                <ValidationMessage For="@(() => objetoRoom.Nombre)" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Hotel * :</td>
+                            <td>
+                                <select class="form-control" @bind="hotelSeleccionado">
+                                    @foreach (var elemento in DisplayData)
+                                    {
+                                        <option value="@elemento.IdHotel" selected="@(elemento.IdHotel == objetoRoom.IdHotel)">@elemento.Name</option>
+                                    }
+                                </select>
+                                <ValidationMessage For="@(() => objetoRoom.IdHotel)" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Número de Huéspedes * :</td>
+                            <td>
+                                <InputNumber @bind-Value="objetoRoom.MaxGuests" placeholder="Ingresar Estrellas..." />
+                                <ValidationMessage For="@(() => objetoRoom.MaxGuests)" />
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </EditForm>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="CloseModalRoom">Cerrar</button>
+                <button type="button" class="btn btn-primary" @onclick="() => editRoomContext.Validate()">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+}
+<table class="table table-striped table-hover">
+    <thead>
+        <tr>
+            <th>Id</th>
+            <th>Nombre</th>
+            <th>Hotel</th>
+            <th>Capacidad de Huéspedes</th>
+            <th>Opciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var dataRoom in DisplayDataRooms)
+        {
+            <tr>
+                <td>@dataRoom.IdRoom</td>
+                <td>@dataRoom.Nombre</td>
+                <td>@dataRoom.Hotel.Name</td>
+                <td>@dataRoom.MaxGuests</td>
+                <td>
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-info "@onclick="(()=>ShowModalEdithRoom(dataRoom))">Editar</button>
+                        <button type="button" class="btn btn-danger" @onclick="(()=>DeleteRoom(dataRoom))">Eliminar</button>
+                    </div>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+@code {
+    //Variables a utilizar en la logica de la pagina
+    private string elementoSeleccionado;
+    List<ChallengeTheFlock1._0.Data.Hotel> DisplayData;
+    List<ChallengeTheFlock1._0.Data.Room> DisplayDataRooms;
+    private ChallengeTheFlock1._0.Data.Hotel objetoHotel = new ChallengeTheFlock1._0.Data.Hotel();
+    private ChallengeTheFlock1._0.Data.Room objetoRoom = new ChallengeTheFlock1._0.Data.Room();
+    private int hotelSeleccionado; 
+    private EditContext editHotelContext;
+    private EditContext editRoomContext;
+    ValidationMessageStore messageStore;
+    ValidationMessageStore messageRoomStore;
+    bool popup = false;
+    bool popupRoom = false;
+    bool edithHotel = false;
+    bool edithRoom = false;
+    //Funciones a invocar desde la vista
+    void ShowModal()
+    {
+        objetoHotel = new ChallengeTheFlock1._0.Data.Hotel();
+        popup = true;
+    }
+    void ShowModalEdithHotel(ChallengeTheFlock1._0.Data.Hotel dataHotel)
+    {
+        edithHotel = true;
+        objetoHotel = dataHotel;
+        popup = true;
+    }
+    void ShowModalEdithRoom(ChallengeTheFlock1._0.Data.Room dataRoom)
+    {
+        elementoSeleccionado = dataRoom.IdHotel.ToString();
+        edithRoom = true;
+        objetoRoom = dataRoom;
+        popupRoom = true;
+    }
+    void CloseModal()
+    {
+        popup = false;
+    }
+    void ShowModalRoom()
+    {
+        elementoSeleccionado = "";
+        objetoRoom = new ChallengeTheFlock1._0.Data.Room();
+        popupRoom = true;
+    }
+    void CloseModalRoom()
+    {
+        objetoRoom = new ChallengeTheFlock1._0.Data.Room();
+        popupRoom = false;
+    }
+    //Inicializacion de la vista
+    protected override async void OnInitialized()
+    {
+        editHotelContext = new(objetoHotel);
+        messageStore = new ValidationMessageStore(editHotelContext);
+        editHotelContext.OnValidationRequested += OnValidationHotelRequested;
+        editRoomContext = new(objetoRoom);
+        messageRoomStore = new ValidationMessageStore(editRoomContext);
+        editRoomContext.OnValidationRequested += OnValidationRoomRequested;
+        DisplayData = Service.GetListaHoles();
+        DisplayDataRooms = Service.GetListaHabitacionesHoles();
+    }
+    //Funciones de comunicacion con los servicios
+    private async void AddData()
+    {
+            if (edithHotel == true)
+            {
+                Response response = Service.EdithHotel(objetoHotel);
+                if (response.estado == true)
+                {
+                    edithHotel = false;
+                    CloseModal();
+                    DisplayData.Clear();
+                    DisplayData = Service.GetListaHoles();
+                    await Swal.FireAsync(
+                        "Operación Exitosa!",
+                        "",
+                        SweetAlertIcon.Success
+                    );
+                }
+                else
+                {
+                    await Swal.FireAsync(
+                         "Error",
+                         "Ocurrio un error al guardar el registro!.",
+                         SweetAlertIcon.Error
+                     );
+                }
+            }
+            else
+            {
+                objetoHotel.IdHotel = 0;
+                Response response = Service.AddHotel(objetoHotel);
+                if (response.estado == true)
+                {
+                    CloseModal();
+                    DisplayData.Clear();
+                    DisplayData = Service.GetListaHoles();
+                    await Swal.FireAsync(
+                        "Operación Exitosa!",
+                        "",
+                        SweetAlertIcon.Success
+                    );
+                }
+                else
+                {
+                    await Swal.FireAsync(
+                         "Error",
+                         "Ocurrio un error al guardar el registro!.",
+                         SweetAlertIcon.Error
+                     );
+                }
+                CloseModal();
+            }
+    }
+    private async void AddDataRoom()
+    {
+        if (edithRoom == true)
+        {
+
+            objetoRoom.IdHotel = hotelSeleccionado;
+            Response response = Service.EdithRoom(objetoRoom);
+            if (response.estado == true)
+            {
+                popupRoom = false;
+                edithRoom = false;
+                CloseModalRoom();
+                DisplayData.Clear();
+                DisplayData = Service.GetListaHoles();
+                await Swal.FireAsync(
+                    "Operación Exitosa!",
+                    "",
+                    SweetAlertIcon.Success
+                );
+            }
+            else
+            {
+                await Swal.FireAsync(
+                        "Error",
+                        "Ocurrio un error al guardar el registro!.",
+                        SweetAlertIcon.Error
+                    );
+            }
+        }
+        else
+        {
+            objetoRoom.IdRoom = 0;
+            objetoRoom.IdHotel = hotelSeleccionado;
+            Response response = Service.AddRoom(objetoRoom);
+            if (response.estado == true)
+            {
+                CloseModalRoom();
+                DisplayDataRooms.Clear();
+                DisplayDataRooms = Service.GetListaHabitacionesHoles();
+                await Swal.FireAsync(
+                    "Operación Exitosa!",
+                    "",
+                    SweetAlertIcon.Success
+                );
+            }
+            else
+            {
+                await Swal.FireAsync(
+                        "Error",
+                        "Ocurrio un error al guardar el registro!.",
+                        SweetAlertIcon.Error
+                    );
+            }
+        }
+    }
+    private async void DeleteHotel(ChallengeTheFlock1._0.Data.Hotel data)
+    {
+        SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions
+            {
+                Title = "Estas Seguro?",
+                Text = "El archivo se eliminara de forma permanente!",
+                ShowCancelButton = true,
+                ConfirmButtonText = "Si!",
+                CancelButtonText = "No!"
+            });
+        if (!string.IsNullOrEmpty(result.Value))
+        {
+            var response = Service.Delete(data);
+            if (response.estado == true)
+            {
+                DisplayData.Clear();
+                DisplayData = Service.GetListaHoles();
+                await Swal.FireAsync(
+                "Eliminado",
+                "El Archivo se Elimino Correctamente!",
+                SweetAlertIcon.Success
+                );
+            }
+            else
+            {
+                await Swal.FireAsync(
+                "Error",
+                "Ocurrio un error al Eliminar el registro!.",
+                SweetAlertIcon.Error
+                );
+            }
+        }
+    }
+    private async void DeleteRoom(ChallengeTheFlock1._0.Data.Room data)
+    {
+        SweetAlertResult result = await Swal.FireAsync(new SweetAlertOptions
+            {
+                Title = "Estas Seguro?",
+                Text = "El archivo se eliminara de forma permanente!",
+                ShowCancelButton = true,
+                ConfirmButtonText = "Si!",
+                CancelButtonText = "No!"
+            });
+        if (!string.IsNullOrEmpty(result.Value))
+        {
+
+            var response = Service.DeleteRoom(data);
+            if (response.estado == true)
+            {
+                DisplayData.Clear();
+                DisplayData = Service.GetListaHoles();
+                await Swal.FireAsync(
+                "Eliminado",
+                "El Archivo se Elimino Correctamente!",
+                SweetAlertIcon.Success
+                );
+            }
+            else
+            {
+                await Swal.FireAsync(
+                "Error",
+                "Ocurrio un error al Eliminar el registro!.",
+                SweetAlertIcon.Error
+                );
+            }
+        }
+    }
+    //validaciones de los distintos atributos pertenecientes a los modelos
+    private void OnValidationHotelRequested(object sender, ValidationRequestedEventArgs e)
+    {
+        messageStore.Clear();
+        bool validate = true;
+        if (string.IsNullOrEmpty(objetoHotel.Name))
+        {
+            messageStore.Add(() => objetoHotel.Name, "El nombre es requerido!");
+            validate = false;
+        }
+        if (string.IsNullOrEmpty(objetoHotel.Address))
+        {
+            messageStore.Add(() => objetoHotel.Address, "La dirección es requerida!");
+            validate = false;
+        }
+        if (string.IsNullOrEmpty(objetoHotel.PhoneNumber))
+        {
+            messageStore.Add(() => objetoHotel.PhoneNumber, "El Telefono es requerido!");
+            validate = false;
+        }
+        else if (validate == true)
+        {
+            AddData();
+        }
+        
+    }
+    private void OnValidationRoomRequested(object sender, ValidationRequestedEventArgs e)
+    {
+        messageRoomStore.Clear();
+        bool validate = true;
+        objetoRoom.IdHotel = hotelSeleccionado;
+        if (string.IsNullOrEmpty(objetoRoom.Nombre))
+        {
+            messageRoomStore.Add(() => objetoRoom.Nombre, "El nombre es requerido!");
+            validate = false;
+        }
+        if (objetoRoom.IdHotel == 0)
+        {
+            messageRoomStore.Add(() => objetoRoom.IdHotel, "El Hotel es requerido!");
+            validate = false;
+        }
+        if (objetoRoom.MaxGuests == 0)
+        {
+            messageRoomStore.Add(() => objetoRoom.IdHotel, "El numero de huéspedes es requerido!");
+            validate = false;
+        }
+        else if (validate == true)
+        {
+            AddDataRoom();
+        }
+        
+    }
+}
